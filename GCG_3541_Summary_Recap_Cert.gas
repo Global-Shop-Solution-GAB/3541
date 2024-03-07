@@ -1,0 +1,616 @@
+Program.Sub.ScreenSU.Start
+gui.SS_Summary..create
+gui.SS_Summary..caption("Summary Recap")
+gui.SS_Summary..size(4135,1825)
+gui.SS_Summary..minx(0)
+gui.SS_Summary..miny(0)
+gui.SS_Summary..position(0,0)
+gui.SS_Summary..event(unload,ss_summary_unload)
+gui.SS_Summary..alwaysontop(False)
+gui.SS_Summary..fontname("Arial")
+gui.SS_Summary..fontsize(8)
+gui.SS_Summary..forecolor(0)
+gui.SS_Summary..fontstyle(,,,,)
+gui.SS_Summary..BackColor(-2147483633)
+gui.SS_Summary..controlbox(True)
+gui.SS_Summary..maxbutton(False)
+gui.SS_Summary..minbutton(False)
+gui.SS_Summary..mousepointer(0)
+gui.SS_Summary..moveable(True)
+gui.SS_Summary..sizeable(False)
+gui.SS_Summary..ShowInTaskBar(True)
+gui.SS_Summary..titlebar(True)
+gui.SS_Summary.lbl_dtpStart.create(label,"Start Date",True,1800,200,1,100,135,True,0,Arial,8,-2147483633,0)
+gui.SS_Summary.lbl_dtpStart.defaultvalue("")
+gui.SS_Summary.lbl_dtpStart.controlgroup(0)
+gui.SS_Summary.dtpStart.create(datepicker)
+gui.SS_Summary.dtpStart.visible(True)
+gui.SS_Summary.dtpStart.size(1800,345)
+gui.SS_Summary.dtpStart.zorder(0)
+gui.SS_Summary.dtpStart.position(100,335)
+gui.SS_Summary.dtpStart.enabled(True)
+gui.SS_Summary.dtpStart.checkbox(False)
+gui.SS_Summary.dtpStart.defaultvalue("")
+gui.SS_Summary.dtpStart.controlgroup(0)
+gui.SS_Summary.lbl_dtpStop.create(label,"Stop Date",True,1800,200,1,1985,135,True,0,Arial,8,-2147483633,0)
+gui.SS_Summary.lbl_dtpStop.defaultvalue("")
+gui.SS_Summary.lbl_dtpStop.controlgroup(0)
+gui.SS_Summary.dtpStop.create(datepicker)
+gui.SS_Summary.dtpStop.visible(True)
+gui.SS_Summary.dtpStop.size(1800,345)
+gui.SS_Summary.dtpStop.zorder(0)
+gui.SS_Summary.dtpStop.position(1985,335)
+gui.SS_Summary.dtpStop.enabled(True)
+gui.SS_Summary.dtpStop.checkbox(False)
+gui.SS_Summary.dtpStop.defaultvalue("")
+gui.SS_Summary.dtpStop.controlgroup(0)
+gui.SS_Summary.cmdOk.create(button)
+gui.SS_Summary.cmdOk.caption("OK")
+gui.SS_Summary.cmdOk.visible(True)
+gui.SS_Summary.cmdOk.size(1000,360)
+gui.SS_Summary.cmdOk.zorder(0)
+gui.SS_Summary.cmdOk.position(100,850)
+gui.SS_Summary.cmdOk.enabled(True)
+gui.SS_Summary.cmdOk.fontname("Arial")
+gui.SS_Summary.cmdOk.fontsize(8)
+gui.SS_Summary.cmdOk.event(click,cmdok_click)
+gui.SS_Summary.cmdOk.defaultvalue("")
+gui.SS_Summary.cmdOk.controlgroup(0)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Variable.UDT.uHours.Define("Employee_ID",String,EMPLOYEE_ID)
+Variable.UDT.uHours.Define("Employee_Name",String,EMPLOYEE_NAME)
+Variable.UDT.uHours.Define("Hours",Float,HOURS)
+Variable.UDT.uHours.Define("BIRUNID",Long)
+Variable.uGlobal.uHours.Declare("uHours")
+Variable.UDT.uUnBilled.Define("BIRUNID",Long)
+Variable.UDT.uUnBilled.Define("Type",Long,TYPE)
+Variable.UDT.uUnBilled.Define("Description",String,DESCRIPTION)
+Variable.UDT.uUnBilled.Define("Hours",Float,HOURS)
+Variable.uGlobal.uUnBilled.Declare("uUnBilled")
+Variable.UDT.uDirect.Define("BIRUNID",Long)
+Variable.UDT.uDirect.Define("Hours",Float,HOURS)
+Variable.UDT.uDirect.Define("Description",String,DESCRIPTION)
+Variable.uGlobal.uDirect.Declare("uDirect")
+Variable.Global.iBIRUNID.Declare(Long,0)
+Variable.Global.iLogID.Declare(Long,0)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+F.ODBC.Connection!con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+Gui.SS_Summary..Show
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3541_Summary_Recap_Cert.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_summary_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Main.End
+
+program.sub.cmdok_click.start
+F.Intrinsic.Control.SetErrorHandler("cmdok_click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+V.Local.sSql.Declare(String)
+V.Local.dStart.Declare(Date)
+V.Local.dStop.Declare(Date)
+V.Local.fHours.Declare(Float)
+V.Local.fMinutes.Declare(Float)
+V.Local.sRet.Declare(String)
+V.Local.iUB.Declare(Long)
+V.Local.sDescSeq.Declare(String)
+V.Local.sJob.Declare(String)
+V.Local.sPL.Declare(String)
+V.Local.sDesc.Declare(String)
+V.Local.sTable.Declare(String)
+V.Local.sField.Declare(String)
+V.Local.sChk.Declare(String)
+V.Local.iChk.Declare(Long)
+V.Local.sPart.Declare(String)
+V.Local.sAbsence.Declare(String)
+V.Local.sEID.Declare(String)
+V.Local.sEName.Declare(String)
+
+Gui.SS_Summary..Visible(False)
+V.Local.dStart.Set(V.Screen.SS_Summary!dtpStart.Value)
+V.Local.dStop.Set(V.Screen.SS_Summary!dtpStop.Value)
+V.uGlobal.uHours.Redim(-1,-1)
+V.uGlobal.uUnBilled.Redim(-1,-1)
+
+F.Global.BI.GetRunID(V.Global.iBIRUNID)
+F.Global.BI.StartLogging(V.Global.iBIRUNID,-1,-1,"",V.Global.iLogID)
+
+F.Intrinsic.UI.InvokeWaitDialog("Please wait while the report is being created.","Summary Recap Report")
+
+'This program keeps up with 3 categories of information.  1. Total hours each employee worked and was absent 2. Total unbilled hours for all employees, which is absent and indirect WO hours by description
+'3. Total direct hours for all employees broken out by product line and the first two chars of the work order number
+F.Intrinsic.String.Build("Select EMPLOYEE, NAME, EARNINGS_CODE, ABSENCE_DESC, HOURS_HH, HOURS_MM From V_TIME_ATTENDANCE where REC_TYPE = 'A' and CHARGE_DATE between '{0}' AND '{1}'",V.Local.dStart.PervasiveDate,V.Local.dStop.PervasiveDate,V.Local.sSql)
+F.ODBC.Connection!con.OpenLocalRecordsetRO("rst",V.Local.sSql)
+
+F.Intrinsic.Control.DoUntil(V.ODBC.con!rst.EOF,=,True)
+	'Formatting the hours from record
+	V.Local.fHours.Set(V.ODBC.con!rst.FieldValFloat!HOURS_HH)
+	V.Local.fMinutes.Set(V.ODBC.con!rst.FieldValFloat!HOURS_MM)
+
+	F.Intrinsic.Control.If(V.Local.fMinutes,<>,0)
+		F.Intrinsic.Math.Div(V.Local.fMinutes,60,V.Local.fMinutes)
+		F.Intrinsic.Math.Round(V.Local.fMinutes,4,V.Local.fMinutes)
+		F.Intrinsic.Math.Add(V.Local.fHours,V.Local.fMinutes,V.Local.fHours)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sEID.Set(V.ODBC.con!rst.FieldValTrim!EMPLOYEE)
+	V.Local.sEName.Set(V.ODBC.con!rst.FieldValTrim!NAME)
+
+	'Building up total hours of each employee for absent hours first
+	F.Intrinsic.Control.If(V.uGlobal.uHours.UBound,=,-1)
+		V.uGlobal.uHours.Redim(0,0)
+		V.uGlobal.uHours!Employee_ID.Set(V.Local.sEID)
+		V.uGlobal.uHours!Employee_Name.Set(V.Local.sEName)
+		V.uGlobal.uHours!Hours.Set(V.Local.fHours)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uHours!Employee_ID,V.Local.sEID,0,V.Local.sRet)
+
+		F.Intrinsic.Control.If(V.Local.sRet,=,"")
+			V.Local.iUB.Set(V.uGlobal.uHours.UBound)
+			F.Intrinsic.Math.Add(V.Local.iUB,1,V.Local.iUB)
+			V.uGlobal.uHours.RedimPreserve(V.uGlobal.uHours.LBound,V.Local.iUB)
+			V.uGlobal.uHours(V.Local.iUB)!Employee_ID.Set(V.Local.sEID)
+			V.uGlobal.uHours(V.Local.iUB)!Employee_Name.Set(V.Local.sEName)
+			V.uGlobal.uHours(V.Local.iUB)!Hours.Set(V.Local.fHours)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.Math.Add(V.uGlobal.uHours(V.Local.sRet.Long)!Hours,V.Local.fHours,V.uGlobal.uHours(V.Local.sRet.Long)!Hours)
+		F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.EndIf
+
+	'Building up total unbilled hours for abset hours, Type 0 in this UDT is a absence record, will be used for sorting in the report later
+	F.Intrinsic.String.Left(V.ODBC.con!rst.FieldValTrim!EARNINGS_CODE,2,V.Local.sAbsence)
+
+	F.Intrinsic.Control.SelectCase(V.Local.sAbsence)
+		F.Intrinsic.Control.Case("01")
+			V.Local.sTable.Set("V_PAY_EARN_1")
+			V.Local.sField.Set("EARNINGS_DESC_1")
+		F.Intrinsic.Control.Case("02")
+			V.Local.sTable.Set("V_PAY_EARN_1")
+			V.Local.sField.Set("EARNINGS_DESC_2")
+		F.Intrinsic.Control.Case("03")
+			V.Local.sTable.Set("V_PAY_EARN_1")
+			V.Local.sField.Set("EARNINGS_DESC_3")
+		F.Intrinsic.Control.Case("04")
+			V.Local.sTable.Set("V_PAY_EARN_1")
+			V.Local.sField.Set("EARNINGS_DESC_4")
+		F.Intrinsic.Control.Case("05")
+			V.Local.sTable.Set("V_PAY_EARN_1")
+			V.Local.sField.Set("EARNINGS_DESC_5")
+		F.Intrinsic.Control.Case("06")
+			V.Local.sTable.Set("V_PAY_EARN_2")
+			V.Local.sField.Set("EARNINGS_DESC_1")
+		F.Intrinsic.Control.Case("07")
+			V.Local.sTable.Set("V_PAY_EARN_2")
+			V.Local.sField.Set("EARNINGS_DESC_2")
+		F.Intrinsic.Control.Case("08")
+			V.Local.sTable.Set("V_PAY_EARN_2")
+			V.Local.sField.Set("EARNINGS_DESC_3")
+		F.Intrinsic.Control.Case("09")
+			V.Local.sTable.Set("V_PAY_EARN_2")
+			V.Local.sField.Set("EARNINGS_DESC_4")
+		F.Intrinsic.Control.Case("10")
+			V.Local.sTable.Set("V_PAY_EARN_2")
+			V.Local.sField.Set("EARNINGS_DESC_5")
+	F.Intrinsic.Control.EndSelect
+
+	F.Intrinsic.String.Build("Select {0} FROM {1}",V.Local.sField,V.Local.sTable,V.Local.sSql)
+	F.ODBC.Connection!con.OpenLocalRecordsetRO("rstDesc",V.Local.sSql)
+
+	F.Intrinsic.Control.If(V.ODBC.con!rstDesc.EOF,=,True)
+		V.Local.sDesc.Set("")
+	F.Intrinsic.Control.Else
+		V.Local.sDesc.Set(V.ODBC.con!rstDesc.FieldValTrim![V.Local.sField])
+	F.Intrinsic.Control.EndIf
+
+	F.ODBC.con!rstDesc.Close
+
+	F.Intrinsic.Control.If(V.uGlobal.uUnBilled.UBound,=,-1)
+		V.uGlobal.uUnBilled.Redim(0,0)
+		V.uGlobal.uUnBilled!Type.Set(0)
+		V.uGlobal.uUnBilled!Description.Set(V.Local.sDesc)
+		V.uGlobal.uUnBilled!Hours.Set(V.Local.fHours)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uUnBilled!Description,V.Local.sDesc,0,V.Local.sRet)
+		F.Intrinsic.Control.If(V.Local.sRet,=,"")
+			V.Local.iUB.Set(V.uGlobal.uUnBilled.UBound)
+			F.Intrinsic.Math.Add(V.Local.iUB,1,V.Local.iUB)
+			V.uGlobal.uUnBilled.RedimPreserve(V.uGlobal.uUnBilled.LBound,V.Local.iUB)
+			V.uGlobal.uUnBilled(V.Local.iUB)!Type.Set(0)
+			V.uGlobal.uUnBilled(V.Local.iUB)!Description.Set(V.Local.sDesc)
+			V.uGlobal.uUnBilled(V.Local.iUB)!Hours.Set(V.Local.fHours)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.Math.Add(V.uGlobal.uUnBilled(V.Local.sRet.Long)!Hours,V.Local.fHours,V.uGlobal.uUnBilled(V.Local.sRet.Long)!Hours)
+		F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.EndIf
+	F.ODBC.con!rst.MoveNext
+
+F.Intrinsic.Control.Loop
+F.ODBC.con!rst.Close
+
+'Opening JOB detall to get hours worked, direct hours, and indirect hours
+F.Intrinsic.String.Build("Select JOB, SUFFIX, SEQ,  EMPLOYEE, EMPL, HOURS_WORKED, FLAG_INDIRECT  From V_JOB_DETAIL where EDITED_WO_DTL <> 'R' and  LMO = 'L' and DATE_SEQUENCE between '{0}' AND '{1}'",V.Local.dStart.PervasiveDate,V.Local.dStop.PervasiveDate,V.Local.sSql)
+F.ODBC.Connection!con.OpenLocalRecordsetRO("rst",V.Local.sSql)
+
+F.Intrinsic.Control.DoUntil(V.ODBC.con!rst.EOF,=,True)
+	V.Local.sEID.Set(V.ODBC.con!rst.FieldValTrim!EMPL)
+	V.Local.sEName.Set(V.ODBC.con!rst.FieldValTrim!EMPLOYEE)
+	V.Local.fHours.Set(V.ODBC.con!rst.FieldValTrim!HOURS_WORKED)
+	V.Local.sJob.Set(V.ODBC.con!rst.FieldValTrim!JOB)
+
+	'Builing up total hours of each employee for labor hours
+	F.Intrinsic.Control.If(V.uGlobal.uHours.UBound,=,-1)
+		V.uGlobal.uHours.Redim(0,0)
+		V.uGlobal.uHours!Employee_ID.Set(V.Local.sEID)
+		V.uGlobal.uHours!Employee_Name.Set(V.Local.sEName)
+		V.uGlobal.uHours!Hours.Set(V.Local.fHours)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uHours!Employee_ID,V.Local.sEID,0,V.Local.sRet)
+
+		F.Intrinsic.Control.If(V.Local.sRet,=,"")
+			V.Local.iUB.Set(V.uGlobal.uHours.UBound)
+			F.Intrinsic.Math.Add(V.Local.iUB,1,V.Local.iUB)
+			V.uGlobal.uHours.RedimPreserve(V.uGlobal.uHours.LBound,V.Local.iUB)
+			V.uGlobal.uHours(V.Local.iUB)!Employee_ID.Set(V.Local.sEID)
+			V.uGlobal.uHours(V.Local.iUB)!Employee_Name.Set(V.Local.sEName)
+			V.uGlobal.uHours(V.Local.iUB)!Hours.Set(V.Local.fHours)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.Math.Add(V.uGlobal.uHours(V.Local.sRet.Long)!Hours,V.Local.fHours,V.uGlobal.uHours(V.Local.sRet.Long)!Hours)
+		F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.EndIf
+
+	'Adding to unbilled hours if indirect, Type 1 is indirect
+	F.Intrinsic.Control.If(V.ODBC.con!rst.FieldValTrim!FLAG_INDIRECT,=,"I")
+		'Getting job sequence description
+		F.Intrinsic.String.Build("Select DESCRIPTION from V_JOB_OPERATIONS_WC where JOB = '{0}' AND SUFFIX = '{1}' AND SEQ = '{2}'",V.Local.sJob,V.ODBC.con!rst.FieldValTrim!SUFFIX,V.ODBC.con!rst.FieldValTrim!SEQ,V.Local.sSql)
+		F.ODBC.Connection!con.OpenLocalRecordsetRO("rstOp",V.Local.sSql)
+
+		F.Intrinsic.Control.If(V.ODBC.con!rstOP.EOF,<>,True)
+			V.Local.sDescSeq.Set(V.ODBC.con!rstOp.FieldValTrim!DESCRIPTION)
+		F.Intrinsic.Control.Else
+			V.Local.sDescSeq.Set("")
+		F.Intrinsic.Control.EndIf
+
+		F.ODBC.con!rstOp.Close
+
+		F.Intrinsic.Control.If(V.uGlobal.uUnBilled.UBound,=,-1)
+			V.uGlobal.uUnBilled.Redim(0,0)
+			V.uGlobal.uUnBilled!Type.Set(1)
+			V.uGlobal.uUnBilled!Description.Set(V.Local.sDescSeq)
+			V.uGlobal.uUnBilled!Hours.Set(V.Local.fHours)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.Variable.UDTSeek(V.uGlobal.uUnBilled!Description,V.Local.sDescSeq,0,V.Local.sRet)
+
+			F.Intrinsic.Control.If(V.Local.sRet,=,"")
+				V.Local.iUB.Set(V.uGlobal.uUnBilled.UBound)
+				F.Intrinsic.Math.Add(V.Local.iUB,1,V.Local.iUB)
+				V.uGlobal.uUnBilled.RedimPreserve(V.uGlobal.uUnBilled.LBound,V.Local.iUB)
+				V.uGlobal.uUnBilled(V.Local.iUB)!Type.Set(1)
+				V.uGlobal.uUnBilled(V.Local.iUB)!Description.Set(V.Local.sDescSeq)
+				V.uGlobal.uUnBilled(V.Local.iUB)!Hours.Set(V.Local.fHours)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.Math.Add(V.uGlobal.uUnBilled(V.Local.sRet.Long)!Hours,V.Local.fHours,V.uGlobal.uUnBilled(V.Local.sRet.Long)!Hours)
+			F.Intrinsic.Control.EndIf
+
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Else
+		'Building direct hours
+		'Getting Product Line from job header
+		F.Intrinsic.String.Build("Select PRODUCT_LINE, DESCRIPTION, PART from V_JOB_HEADER where JOB = '{0}' AND SUFFIX = '{1}'",V.Local.sJob,V.ODBC.con!rst.FieldValTrim!SUFFIX,V.Local.sSql)
+		F.ODBC.Connection!con.OpenLocalRecordsetRO("rstPL",V.Local.sSql)
+
+		F.Intrinsic.Control.If(V.ODBC.con!rstPL.EOF,<>,True)
+			V.Local.sPL.Set(V.ODBC.con!rstPL.FieldValTrim!PRODUCT_LINE)
+			V.Local.sDesc.Set(V.ODBC.con!rstPL.FieldValTrim!DESCRIPTION)
+			V.Local.sPart.Set(V.ODBC.con!rstPL.FieldValTrim!PART)
+		F.Intrinsic.Control.Else
+			V.Local.sPL.Set("")
+			V.Local.sDesc.Set("")
+			V.Local.sPart.Set("")
+		F.Intrinsic.Control.EndIf
+
+		F.ODBC.con!rstPL.Close
+
+		'Case Statement to figure out category totals belong to
+		'iChk = 1 write to unbilled, iChk = 0 write to Direct
+		F.Intrinsic.Control.If(V.Local.sPL,=,"")
+			'7-Other
+			V.Local.iChk.Set(0)
+		F.Intrinsic.Control.Else
+
+			F.Intrinsic.Control.If(V.Local.sPL,>=,"10","AND",V.Local.sPL,<=,"19")
+				'3-BU1
+				V.Local.sDesc.Set("BU1")
+				V.Local.iChk.Set(0)
+			F.Intrinsic.Control.EndIf
+
+			F.Intrinsic.Control.If(V.Local.sPL,>=,"20","AND",V.Local.sPL,<=,"29")
+				'4-BU2
+				V.Local.sDesc.Set("BU2")
+				V.Local.iChk.Set(0)
+			F.Intrinsic.Control.EndIf
+
+			F.Intrinsic.Control.If(V.Local.sPL,>=,"30","AND",V.Local.sPL,<=,"39")
+				'5-BU3
+				V.Local.sDesc.Set("BU3")
+				V.Local.iChk.Set(0)
+			F.Intrinsic.Control.EndIf
+
+			F.Intrinsic.Control.If(V.Local.sPL,>=,"50","AND",V.Local.sPL,<=,"59")
+				'3-BU5
+				V.Local.sDesc.Set("BU5")
+				V.Local.iChk.Set(0)
+			F.Intrinsic.Control.EndIf
+
+			F.Intrinsic.Control.If(V.Local.sPL,>=,"40","AND",V.Local.sPL,<=,"49")
+				'7-Other
+				V.Local.iChk.Set(0)
+			F.Intrinsic.Control.EndIf
+
+			F.Intrinsic.Control.If(V.Local.sPL,<,"10")
+				'7-Other
+				V.Local.iChk.Set(0)
+			F.Intrinsic.Control.EndIf
+
+			F.Intrinsic.Control.If(V.Local.sPL,>,"59")
+				'7-Other
+				V.Local.iChk.Set(0)
+			F.Intrinsic.Control.EndIf
+
+			F.Intrinsic.Control.SelectCase(V.Local.sPL)
+				F.Intrinsic.Control.Case("FA")
+					'Asset Fabriaction unbilled item
+					V.Local.sDesc.Set("Asset Fabrication")
+					V.Local.iChk.Set(1)
+				F.Intrinsic.Control.Case("D1")
+					'Prototype unbilled item
+					V.Local.sDesc.Set("Prototypes")
+					V.Local.iChk.Set(1)
+				F.Intrinsic.Control.Case("D2")
+					'Prototype unbilled item
+					V.Local.sDesc.Set("Prototypes")
+					V.Local.iChk.Set(1)
+				F.Intrinsic.Control.Case("D3")
+					'Prototype unbilled item
+					V.Local.sDesc.Set("Prototypes")
+					V.Local.iChk.Set(1)
+				F.Intrinsic.Control.Case("D4")
+					'Prototype unbilled item
+					V.Local.sDesc.Set("Prototypes")
+					V.Local.iChk.Set(1)
+				F.Intrinsic.Control.Case("D5")
+					'Prototype unbilled item
+					V.Local.sDesc.Set("Prototypes")
+					V.Local.iChk.Set(1)
+				F.Intrinsic.Control.Case("S1")
+					'Samples BU1 unbilled item
+					V.Local.sDesc.Set("Samples-BU1")
+					V.Local.iChk.Set(1)
+				F.Intrinsic.Control.Case("S1")
+					'Samples BU1 unbilled item
+					V.Local.sDesc.Set("Samples-BU1")
+					V.Local.iChk.Set(1)
+				F.Intrinsic.Control.Case("S2")
+					'Samples BU2 unbilled item
+					V.Local.sDesc.Set("Samples-BU2")
+					V.Local.iChk.Set(1)
+				F.Intrinsic.Control.Case("S3")
+					'Samples BU3 unbilled item
+					V.Local.sDesc.Set("Samples-BU3")
+					V.Local.iChk.Set(1)
+			F.Intrinsic.Control.EndSelect
+
+			F.Intrinsic.String.Left(V.Local.sPart,3,V.Local.sChk)
+			F.Intrinsic.Control.If(V.Local.sChk,=,"NCR")
+				'Non-Conformance unbilled item
+				V.Local.sDesc.Set("Non-Conformance")
+				V.Local.iChk.Set(1)
+			F.Intrinsic.Control.EndIf
+
+			F.Intrinsic.String.Left(V.Local.sDesc,3,V.Local.sChk)
+			F.Intrinsic.Control.If(V.Local.sChk,=,"NCR")
+				'Non-Conformance unbilled item
+				V.Local.sDesc.Set("Non-Conformance")
+				V.Local.iChk.Set(1)
+			F.Intrinsic.Control.EndIf
+
+			F.Intrinsic.String.Left(V.Local.sDesc,2,V.Local.sChk)
+			F.Intrinsic.Control.If(V.Local.sChk,=,"WH")
+				'Non-Conformance unbilled item
+				V.Local.sDesc.Set("WH")
+				V.Local.iChk.Set(1)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+
+		F.Intrinsic.Control.If(V.Local.iChk,=,0)
+			'Adding hours to direct
+			F.Intrinsic.Control.If(V.uGlobal.uDirect.UBound,=,-1)
+				V.uGlobal.uDirect!Description.Set(V.Local.sDesc)
+				V.uGlobal.uDirect!Hours.Set(V.Local.fHours)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.Variable.UDTSeek(V.uGlobal.uDirect!Description,V.Local.sDesc,0,V.Local.sRet)
+				F.Intrinsic.Control.If(V.Local.sRet,=,"")
+					V.Local.iUB.Set(V.uGlobal.uDirect.UBound)
+					F.Intrinsic.Math.Add(V.Local.iUB,1,V.Local.iUB)
+					V.uGlobal.uDirect.RedimPreserve(V.uGlobal.uDirect.LBound,V.Local.iUB)
+					V.uGlobal.uDirect(V.Local.iUB)!Description.Set(V.Local.sDesc)
+					V.uGlobal.uDirect(V.Local.iUB)!Hours.Set(V.Local.fHours)
+				F.Intrinsic.Control.Else
+					F.Intrinsic.Math.Add(V.uGlobal.uDirect(V.Local.sRet.Long)!Hours,V.Local.fHours,V.uGlobal.uDirect(V.Local.sRet.Long)!Hours)
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.Else
+			'Adding hours to unbilled
+			F.Intrinsic.Control.If(V.uGlobal.uUnBilled.UBound,=,-1)
+				V.uGlobal.uUnBilled!Description.Set(V.Local.sDesc)
+				V.uGlobal.uUnBilled!Type.Set(1)
+				V.uGlobal.uUnBilled!Hours.Set(V.Local.fHours)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.Variable.UDTSeek(V.uGlobal.uUnBilled!Description,V.Local.sDesc,0,V.Local.sRet)
+				F.Intrinsic.Control.If(V.Local.sRet,=,"")
+					V.Local.iUB.Set(V.uGlobal.uUnBilled.UBound)
+					F.Intrinsic.Math.Add(V.Local.iUB,1,V.Local.iUB)
+					V.uGlobal.uUnBilled.RedimPreserve(V.uGlobal.uUnBilled.LBound,V.Local.iUB)
+					V.uGlobal.uUnBilled(V.Local.iUB)!Type.Set(1)
+					V.uGlobal.uUnBilled(V.Local.iUB)!Description.Set(V.Local.sDesc)
+					V.uGlobal.uUnBilled(V.Local.iUB)!Hours.Set(V.Local.fHours)
+				F.Intrinsic.Control.Else
+					F.Intrinsic.Math.Add(V.uGlobal.uUnBilled(V.Local.sRet.Long)!Hours,V.Local.fHours,V.uGlobal.uUnBilled(V.Local.sRet.Long)!Hours)
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.ODBC.con!rst.MoveNext
+F.Intrinsic.Control.Loop
+F.ODBC.con!rst.Close
+F.Intrinsic.Control.CallSub(Loadrst)
+F.Intrinsic.Control.CallSub(Callbi)
+F.Intrinsic.Control.CallSub(Ss_summary_unload)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdok_click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3541_Summary_Recap_Cert.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_summary_unload)
+Function.Intrinsic.Control.EndIf
+
+
+program.sub.cmdok_click.end
+
+program.sub.ss_summary_unload.start
+F.Intrinsic.Control.SetErrorHandler("ss_summary_unload_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+F.ODBC.Connection!con.Close
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("ss_summary_unload_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3541_Summary_Recap_Cert.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+
+program.sub.ss_summary_unload.end
+
+Program.Sub.LoadRST.Start
+F.Intrinsic.Control.SetErrorHandler("LoadRST_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+V.Local.sSql.Declare(String)
+
+F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uHours!BIRUNID,"BIRUNID")
+F.Intrinsic.Variable.UDTSetMemberValue(V.uGlobal.uHours!BIRUNID,V.Global.iBIRUNID)
+F.Intrinsic.Control.If(V.uGlobal.uHours.UBound,>,-1)
+	V.Local.sSql.Set("Select * From GCG_3541_RECAP_H")
+	F.ODBC.Connection!con.OpenLocalRecordsetRW("rst",V.Local.sSql)
+	F.Intrinsic.Variable.SaveUDTToRecordSet("con","rst","V.uGlobal.uHours")
+	F.ODBC.con!rst.Close
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uUnBilled!BIRUNID,"BIRUNID")
+F.Intrinsic.Variable.UDTSetMemberValue(V.uGlobal.uUnBilled!BIRUNID,V.Global.iBIRUNID)
+F.Intrinsic.Control.If(V.uGlobal.uUnBilled.UBound,>,-1)
+	V.Local.sSql.Set("Select * From GCG_3541_RECAP_U")
+	F.ODBC.Connection!con.OpenLocalRecordsetRW("rst",V.Local.sSql)
+	F.Intrinsic.Variable.SaveUDTToRecordSet("con","rst","V.uGlobal.uUnBilled")
+	F.ODBC.con!rst.Close
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uDirect!BIRUNID,"BIRUNID")
+F.Intrinsic.Variable.UDTSetMemberValue(V.uGlobal.uDirect!BIRUNID,V.Global.iBIRUNID)
+F.Intrinsic.Control.If(V.uGlobal.uDirect.UBound,>,-1)
+	V.Local.sSql.Set("Select * From GCG_3541_RECAP_D")
+	F.ODBC.Connection!con.OpenLocalRecordsetRW("rst",V.Local.sSql)
+	F.Intrinsic.Variable.SaveUDTToRecordSet("con","rst","V.uGlobal.uDirect")
+	F.ODBC.con!rst.Close
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("LoadRST_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3541_Summary_Recap_Cert.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_summary_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.LoadRST.End
+
+Program.Sub.CallBI.Start
+F.Intrinsic.Control.SetErrorHandler("CallBI_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+V.Local.sParam.Declare(String)
+V.Local.sParamVal.Declare(String)
+V.Local.sStartDate.Declare(String)
+V.Local.sStopDate.Declare(String)
+V.Local.iRet.Declare(Long)
+
+F.Global.BI.StopLogging(V.Global.iBIRUNID)
+F.Intrinsic.UI.CloseWaitDialog
+
+V.Local.sParam.Set("StartDate*!*StopDate")
+F.Intrinsic.String.Format(V.Screen.SS_Summary!dtpStart.Value,"MM/DD/YYYY",V.Local.sStartDate)
+F.Intrinsic.String.Format(V.Screen.SS_Summary!dtpStop.Value,"MM/DD/YYYY",V.Local.sStopDate)
+F.Intrinsic.String.Build("{0}*!*{1}",V.Local.sStartDate,"*!*",V.Local.sStopDate,V.Local.sParamVal)
+
+F.Global.BI.RunReportPreProcessor(V.Global.iBIRUNID,V.Global.iLogID,V.Local.sParam,V.Local.sParamVal,"",-1,True,"",-1,"",-1,"","",V.Local.iRet)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("CallBI_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3541_Summary_Recap_Cert.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_summary_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.CallBI.End
+
+Program.Sub.Comments.Start
+${$0$}$GCG_Summary_Recap_Cert$}$BCC$}$10/6/2015
+${$2$}$$}$$}$3$}$4$}$GCG_Summary_Recap_Cert.rpt$}$10/6/2015 4:15:22 PM$}$This is the corresponding report for the program.
+${$2$}$$}$$}$2$}$4$}$GCG_RECAP_U_CERT.sql$}$10/6/2015 4:14:56 PM$}$This table stores the unbilled hours.
+${$2$}$$}$$}$1$}$4$}$GCG_RECAP_H_Cert.sql$}$10/6/2015 4:13:58 PM$}$This table contains the hours worked and absent.
+${$2$}$$}$$}$0$}$4$}$GCG_RECAP_D_Cert.sql$}$10/6/2015 4:13:21 PM$}$This table stores the Direct Hours
+${$3$}$0$}$$}$0$}$-1$}$$}$12:00:00 AM$}$Report to show summary recap of worked hours for employees by date range.
+${$4$}$0$}$$}$0$}$-1$}$BCC$}$10/6/2015 4:19:46 PM$}$GS Certified. Sped up code. Added error handling. Fixed bugs. Changed to Preprocessor.
+${$4$}$1$}$cmdok_click$}$0$}$-1$}$BCC$}$10/6/2015 4:18:10 PM$}$The column names were changed to EARNINGS_DESC_#. This was changed for 2015.2.
+Program.Sub.Comments.End
+
